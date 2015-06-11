@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta charset="UTF-8">
+	<title>Visualização</title>
+	<script type="text/javascript" src="./d3/jquery-2.1.4.js"></script>
+	<script src="./d3/d3.js" charset="utf-8"></script>
+	<script src="./d3/topojson.v1.min.js"></script>
+	<script type="text/javascript" src = "./d3/d3.geo.projection.js"></script> 
+	<link href="stilo.css" rel="stylesheet">
+
+
+</head>
+<body>
+	<div>
+		<h1>Visualização</h1>
+		<div class="map" id="map">
+		</div>
+		<script>
+		var map = new ol.Map({target: 'map'});
+
+		map.setView(new ol.View({
+			center: [0, 0],
+			zoom: 2
+		}));
+
+		var osmSource = new ol.source.OSM();
+		var osmLayer = new ol.layer.Vector({source: osmSource});
+		map.addLayer(osmLayer);
+
+
+		</script>
+	</div>
+
+</body>
+</html>

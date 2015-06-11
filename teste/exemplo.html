@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+  <title>Modify features example</title>
+ 
+  <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+  
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ol3/3.5.0/ol.css" type="text/css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ol3/3.5.0/ol.js"></script>
+  
+  <link href="exemplo.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid">
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div id="map" class="map"></div>
+				
+				
+				<div id="popup" class="ol-popup">
+					<a href="#" id="popup-closer" class="ol-popup-closer"></a>
+					<div id="popup-content"></div>
+				</div>
+
+         <div id = "conjuntoLegenda">
+         <div id= "legenda"></div>
+         <button type="button" class="btn btn-default" id ="botaoLegenda"><i class="glyphicon glyphicon-list"></i></button>
+         </div>
+
+
+
+
+			</div>
+    </div>
+
+  </div>
+  <script>
+
+  
+  var container = document.getElementById('popup');
+  var content = document.getElementById('popup-content');
+  var closer = document.getElementById('popup-closer');
+
+
+  		
+  			closer.onclick = function() {
+  				overlay.setPosition(undefined);
+  				closer.blur();
+  				return false;
+  			};
+
+  			var overlay = new ol.Overlay(/** @type {olx.OverlayOptions} */
+  			({
+  				element : container,
+  				autoPan : true,
+  				autoPanAnimation : {
+  					duration : 250
+  				}
+  			}));
+
+  var osmLayer = new ol.layer.Tile({
+   source: new ol.source.OSM()
+ });
+
+  var raster = new ol.layer.Tile({
+   source: new ol.source.MapQuest({
+     layer: 'sat',
+     wrapX: false
+   })
+ });
+
+
+  var corde = new ol.source.Vector({
+    url: 'br2.json',
+    format: new ol.format.GeoJSON(),
+    wrapX: false
+  });
+
+
+var myText = function (feature,m){
+  return new ol.style.Text({
+    text: feature.get(m), 
+    font:"12pt", 
+    fill: new ol.style.Fill('black')
+  })
+}
+
+
+var myStyle = function(m, col, lin){
+  return function(feature){
+    var style = new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: lin,
+      //lineDash: [4],
+      width: 1
+    }),
+    fill: new ol.style.Fill({
+      color: col
+    }),text: myText(feature,m)
+
+  })
+    return [style]
+  }
+}
+
+/*
+var myText = function (){
+  return function (feature){
+  return new ol.style.Text({
+    text: feature.get('sigla'), 
+    font:"12pt", 
+    fill: new ol.style.Fill('black')
+  })
+}
+}
+*/
+var vector = new ol.layer.Vector({
+  source: corde,
+  style: myStyle('sigla', "#CFF09E", 'blue'),
+  /*style: new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: 'blue',
+      //lineDash: [4],
+      width: 1
+    }),
+    fill: new ol.style.Fill({
+      color: "#CFF09E"
+    }),
+    text: ol.style.Text({
+      text: 'jesus',
+      font:"12pt", 
+      fill: new ol.style.Fill('black')
+    })
+  })*/
+});
+
+
+
+var vectorfer = new ol.layer.Vector({
+  source: new ol.source.Vector({
+    url: 'ferro.json',
+    format: new ol.format.GeoJSON(),
+    wrapX: false
+  }),
+
+  style: [new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: "#C02942",
+    //lineDash: [4],
+    width: 2
+  }),
+    fill: new ol.style.Fill({
+      color: "#C02942"
+    })
+  })  ]
+});
+
+
+ var select = new ol.interaction.Select();
+
+//  var modify = new ol.interaction.Modify({
+//   features: select.getFeatures()
+// });
+
+
+var map = new ol.Map({
+ interactions: ol.interaction.defaults().extend([select]),
+ layers: [raster,vector, vectorfer],
+ controls :ol.control.defaults ().extend([new ol.control.OverviewMap(), new ol.control.ScaleLine(), new ol.control.Attribution()]), 
+ overlays: [overlay],
+ target: 'map',
+ view: new ol.View({
+  center: [0, 0],
+  zoom: 3
+})
+});
+
+/*
+ * popup
+ */
+ var selectedFeatures = select.getFeatures();
+ 
+ map.on('click', function() {
+	  selectedFeatures.clear();
+	});
+
+
+  var mayPara = function(feat){
+	  
+  	 var keys = feat.getKeys();
+  	 var cont = 1;
+  	 var str = '<div id = "popupRotGrup">';
+  	 for(cont = 1; cont < keys.length; cont++){
+  		 str = str + '<div id = "popupRotulo" style = "float: left" >'+ keys[cont] +
+  		 ':' +'</div>'+ '<div id = "popupKey">' + feat.get(keys[cont])+ '</div>';
+  	 }
+  	 return str + '</div>';
+  } 
+ 
+ 
+  select.on('select',function(evt){ 
+	 //var prop = selectedFeatures.getArray()[0].getProperties();
+	 var keys  = selectedFeatures.getArray()[0];
+	 console.log (evt);
+	 if (keys !== undefined){
+		 $(content).append(mayPara(keys));
+	 
+	 }
+	 });
+
+			map.on('singleclick', function(evt) {
+				var coordinate = evt.coordinate;
+				var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
+						coordinate, 'EPSG:3857', 'EPSG:4326'));
+				
+				//console.log (selectedFeatures.getArray()[0].getProperties());
+
+				content.innerHTML = '<p>You clicked here:</p><code>' + hdms
+						+ '</code><br></br>';
+						
+				overlay.setPosition(coordinate);
+				
+			});
+
+//entra a legendenda
+
+
+function montarLegenda(vetLayers, vetConsult){
+  var  layerAtivos = [];
+  var cont;
+  var strhtml = '';
+  for (cont = 0 ; cont < vetLayers.length; cont++){
+    strhtml += '<div class = "legendaL" id ="layer' + cont +'" data-placement="left" title="Tooltip on left">' + 
+    '<button type="button" class="btn btn-primary"  title= "Mostra/Esconder Camada"  onclick = "onOffCamadas('+cont +',' +cont + ');"  id = "onOff'+  cont +
+    '"><i class="glyphicon glyphicon-eye-close" id ="onOfficon' + cont + '"></i></button>'+
+    '<button type="button" class="btn btn-default" title= "Download GeoJSON"' + 'id = "dow' + cont + '">'+
+      '<i class="glyphicon glyphicon-download" ></i>'+'</button>'+ 
+    '<button type="button" class="btn btn-default" title= "Excluir Camada"' + 'id = "visb'+ cont +'" onclick = "desligaLayer(' + cont +',' + cont + ',' +'layer' + cont +
+      ');"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>'+ 
+
+    '<input id="html5colorpicker" class="btn form-control"  title= "Cor do Preechimento" onchange="clickColor(0, -1, -1, 5)" value="#ff0000" type="color"></input>' +
+    '<input id="html5colorpicker" class="btn form-control lineFillSelec" title= "Cor da Linha" onchange="clickColor(0, -1, -1, 5)" value="#ff0000" type="color"></input>'+ '<div class = "rotulolegenda"><h4>'+
+    'Camada ' + cont + '</h4></div></div>';
+    layerAtivos.push(cont);
+  }
+
+  $("#legenda").append(strhtml);
+  return layerAtivos;
+}
+
+var lays = montarLegenda(map.getLayers().getArray());
+
+
+function onOffCamadas(idLayerVis, idLayer){
+  var camadaMap= map.getLayers().getArray();
+  var visivelCamada = camadaMap[idLayer].getVisible();
+  if(visivelCamada == true){
+    camadaMap[idLayer].setVisible(false);
+    $('#onOff' + idLayerVis).attr("class", "btn btn-default");
+    $('#onOfficon' + idLayerVis).attr("class", "glyphicon glyphicon-eye-open");
+  }else{
+    camadaMap[idLayer].setVisible(true);
+    $('#onOff' + idLayerVis).attr("class", "btn btn-primary");
+    $('#onOfficon' + idLayerVis).attr("class", "glyphicon glyphicon-eye-close");
+  }
+}
+
+function mudarCor(idLayer, novaCor){
+  var camadaMap= map.getLayers().getArray();
+  var estilo = camadaMap[idLayer].getStyle();
+  estilo[0].getFill().setColor(novaCor);
+  camadaMap[idLayer].setStyle(estilo);
+
+ map.getLayers().getArray()[2].getStyle()[0].getFill().setColor('#333')
+}
+
+function desligaLayer(idLayerVis, idLayer, divLegenda){
+  var vetl = [];
+  var cont = 0;
+  var strhtml = '';
+  var newcomando = '';
+  map.removeLayer(map.getLayers().getArray()[idLayer]);
+   $(divLegenda).remove();
+    lays[idLayerVis] = -1;
+    vetl = map.getLayers().getArray();
+  var cont2 = 0;
+
+  for (cont = 0 ; cont < lays.length; cont++){
+    
+    if(lays[cont]!= -1 && cont2 < vetl.length){
+      strhtml ='#visb' + cont;
+      newcomando = 'desligaLayer('+ cont +','+ cont2 + ',' +'layer'+ cont+');';
+      $(strhtml).attr("onclick", newcomando);
+      
+      strhtml ='#onOff' + cont;
+      newcomando = 'onOffCamadas(' + cont +','+ cont2 + ');';
+      $(strhtml).attr("onclick", newcomando);
+
+      lays [cont] = cont2;
+      cont2++;
+    }
+  }
+}
+$(document).ready(function(){
+    $("#botaoLegenda").click(function(){
+        $("#legenda").slideToggle("slow");
+    });
+});
+		</script>
+</body>
+</html>

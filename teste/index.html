@@ -1,0 +1,41 @@
+<html>
+<head>
+<title></title>
+</head>
+<body>
+
+</body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v0.min.js"></script>
+<script type="text/javascript">
+// drawing a map in a canvas 
+    var width = 960, height = 500; 
+    var canvas = d3.select("body").append("canvas")
+                            .attr("width", width)
+                            .attr("height",height); 
+
+    var context = canvas.node().getContext("2d"); 
+
+    var projection = d3.geo.albersUsa();
+
+
+    var path = d3.geo.path()
+        .projection(projection)
+        .context(context);
+
+
+    d3.json("jsons/jque.json", function(error, data) {
+      var land = data.features; //topojson.object(data, data.objects.states);
+
+      context.fillStyle = '#0B486B';  
+      context.strokeStyle = '#A8DBA8';
+      
+
+      context.beginPath();
+      path(land);
+      context.fill();
+      context.stroke();
+    });
+
+</script>
+</html>
